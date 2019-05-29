@@ -1,0 +1,9 @@
+﻿Generated model file: BLEMobile.edmx.
+Loading metadata from the database took 00:00:00.8147800.
+Generating the model took 00:00:01.4731778.
+Generated model file: BLEMobile.edmx.
+Loading metadata from the database took 00:00:00.5409594.
+Generating the model took 00:00:00.5903146.
+Generated model file: BLEMobile.edmx.
+Loading metadata from the database took 00:00:00.5422349.
+Generating the model took 00:00:00.6781656.

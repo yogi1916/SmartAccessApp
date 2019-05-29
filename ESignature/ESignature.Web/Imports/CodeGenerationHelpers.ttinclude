@@ -1,0 +1,146 @@
+﻿<#@ assembly name="System.Core"
+#><#@ assembly name="EnvDTE"
+#><#@ assembly name="EnvDTE80" 
+#><#@ assembly name="VSLangProj" 
+#><#@ assembly name="$(TargetDir)Serenity.Core.dll"
+#><#@ assembly name="$(TargetDir)Serenity.Web.dll" 
+#><#@ assembly name="$(ProjectDir)tools\Mono.Cecil\Mono.Cecil.dll" 
+#><#@ assembly name="$(ProjectDir)tools\JsEngine\MsieJavaScriptEngine.dll"
+#><#@ import namespace="System.Linq" 
+#><#@ import namespace="System.Collections.Generic" 
+#><#@ import namespace="Microsoft.VisualStudio.TextTemplating" 
+#><#@ import namespace="Serenity.CodeGeneration"
+#><#@ import namespace="MsieJavaScriptEngine"
+#><#+
+
+public class TSTypeLister
+{
+    private string projectDir;
+
+    public TSTypeLister(string projectDir)
+    {
+        this.projectDir = System.IO.Path.GetFullPath(projectDir);
+    }
+
+    private MsieJsEngine SetupJsEngine()
+    {
+        MsieJsEngine jsEngine;
+        try
+        {
+            jsEngine = new MsieJsEngine(new JsEngineSettings { EngineMode = JsEngineMode.ChakraIeJsRt });
+        }
+        catch
+        {
+            jsEngine = new MsieJsEngine();
+        }
+        try
+        {
+            return jsEngine;
+        }
+        catch
+        {
+            jsEngine.Dispose();
+            throw;
+        }
+    }
+
+    public List<ExternalType> List()
+    {
+        var files = Directory.GetFiles(projectDir + @"Modules", "*.ts", SearchOption.AllDirectories)
+            .Concat(Directory.GetFiles(projectDir + @"Imports", "*.ts", SearchOption.AllDirectories))
+            .Concat(Directory.GetFiles(projectDir + @"Scripts", "*.ts", SearchOption.AllDirectories))
+            .Where(x => !x.EndsWith(".d.ts") || x.IndexOf("Serenity") >= 0).OrderBy(x => x);
+
+        var json2 = File.ReadAllText(projectDir + @"tools\JsEngine\json2.min.js");
+        var tsServices = File.ReadAllText(projectDir + @"tools\JsEngine\typeScriptServices.js");
+        string codeGeneration;
+        using (var sr = new StreamReader(
+            typeof(Serenity.CodeGeneration.DtoGenerator).Assembly.GetManifestResourceStream(
+                "Serenity.Web.Scripts.tsservices.Serenity.CodeGeneration.js")))
+        {
+            codeGeneration = sr.ReadToEnd();
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(json2);
+        sb.AppendLine(tsServices);
+        sb.AppendLine(codeGeneration);
+        foreach (var file in files)
+            sb.AppendLine("Serenity.CodeGeneration.addSourceFile(" +
+                file.Replace('\\', '/').ToJson() + ", " +
+                File.ReadAllText(file).ToJson() + ");");
+
+        var cacheDir = Path.Combine(Path.GetTempPath(), ".tstypecache");
+
+        var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = BitConverter.ToString(md5.ComputeHash(Encoding.Unicode.GetBytes(sb.ToString())));
+        var cacheFile = Path.Combine(cacheDir, hash + ".json");
+
+        if (File.Exists(cacheFile))
+        {
+            try
+            {
+                return JSON.Parse<List<ExternalType>>(File.ReadAllText(cacheFile));
+            }
+            catch
+            {
+            }
+        }
+
+        Action<string> writeCache = (json) =>
+        {
+            try
+            {
+                Directory.CreateDirectory(cacheDir);
+                Serenity.IO.TemporaryFileHelper.PurgeDirectory(cacheDir, TimeSpan.Zero, 99, null);
+                File.WriteAllText(cacheFile, json);
+            }
+            catch
+            {
+            }
+        };
+
+        using (var jsEngine = SetupJsEngine())
+        {
+			jsEngine.Execute(sb.ToString());
+            var json = jsEngine.Evaluate<string>("JSON.stringify(Serenity.CodeGeneration.parseTypes())");
+            writeCache(json);
+            return JSON.Parse<List<ExternalType>>(json);
+        }
+    }
+}
+
+public class TypeScriptCompiler
+{
+    public string DetermineTSCPath() {
+        var pf86 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            @"Microsoft SDKs\TypeScript\");
+
+        var pf64 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            @"Microsoft SDKs\TypeScript\");
+
+        var list = new List<string>();
+        if (Directory.Exists(pf86))
+            list.AddRange(Directory.GetFiles(pf86, "tsc.exe", SearchOption.AllDirectories));
+        if (Directory.Exists(pf64))
+            list.AddRange(Directory.GetFiles(pf64, "tsc.exe", SearchOption.AllDirectories));
+
+        if (list.Count > 0)
+        {
+            return list.OrderByDescending(x => Path.GetFileName(Path.GetDirectoryName(x)))
+                .FirstOrDefault();
+        }
+
+        throw new Exception("Can't determine path of TSC.exe that is required to compile generated TypeScript files!");
+    }
+
+    public void Compile(string workingDirectory, string arguments) {
+        var tscPath = DetermineTSCPath();
+
+        var psi = new System.Diagnostics.ProcessStartInfo(tscPath, arguments);
+        psi.WorkingDirectory = workingDirectory;
+        System.Diagnostics.Process.Start(psi).WaitForExit(10000);
+    }
+}
+
+#>

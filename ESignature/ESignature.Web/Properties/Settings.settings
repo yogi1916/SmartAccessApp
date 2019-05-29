@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ESignature.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="UserName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">cian</Value>
+    </Setting>
+    <Setting Name="Password" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Cian1235</Value>
+    </Setting>
+    <Setting Name="SMSURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://173.45.76.227/send.aspx</Value>
+    </Setting>
+    <Setting Name="smtpPortNo" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">25</Value>
+    </Setting>
+    <Setting Name="smtpServerName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">mail.smartisystems.com</Value>
+    </Setting>
+    <Setting Name="smtpUserName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SmartAlarm@smartisystems.com</Value>
+    </Setting>
+    <Setting Name="smtpPassword" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SmartI@321</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

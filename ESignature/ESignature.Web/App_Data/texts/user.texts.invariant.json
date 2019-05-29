@@ -1,0 +1,11 @@
+{
+  "Authorization.AccessDenied": "You are not allowed for this operation. Role and scope denied..",
+  "Controls.EntityDialog.SaveSuccessMessage": "Save success",
+  "Db.Default.ActivityLog.AccessPointString": "Access Point",
+  "Db.Default.ActivityLog.CardNo": "Card No",
+  "Db.Default.ActivityLog.EmployeeName": "EmployeeName",
+  "Db.Default.Organization.OrganizationName": "Organization",
+  "Navigation.Administration/User Management": "User Management",
+  "Validation.EmailConfirm": "Please enter valid inputs",
+  "Validation.InvalidFormMessage": "Girish Enter valid input"
+}
